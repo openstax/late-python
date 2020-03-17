@@ -1,0 +1,12 @@
+version: '3.7'
+services:
+  app:
+    image: "openstax/late-python"
+    build: .
+    volumes:
+      - .:/code
+    networks:
+      - openstax
+networks:
+  openstax:
+    name: openstax
