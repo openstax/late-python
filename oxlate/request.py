@@ -1,6 +1,8 @@
+from copy import deepcopy
+
 class Request:
     def __init__(self, data):
-        self._data = data
+        self._data = deepcopy(data)
         self._headers = data.get('headers', {})
         self._cookies = self.__parsedCookies()
 
@@ -21,13 +23,13 @@ class Request:
             return None
 
     def to_dict(self):
-        return dict(self._data)
+        return deepcopy(self._data)
 
-    def raw_headers(self):
-        return dict(self._headers)
+    def raw_headers_copy(self):
+        return deepcopy(self._headers)
 
-    def raw_cookies(self):
-        return dict(self._cookies)
+    def raw_cookies_copy(self):
+        return deepcopy(self._cookies)
 
     def __parsedCookies(self):
         parsedCookie = {}

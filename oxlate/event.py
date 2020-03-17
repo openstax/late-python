@@ -14,5 +14,3 @@ class Event:
             return Request(self._cf.get('request'))
         else:
             raise ValueError('There is no request record in the provided event data')
-
-

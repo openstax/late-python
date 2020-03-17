@@ -4,8 +4,30 @@ import ipdb
 
 from oxlate import Request
 
+def new_request(fragment):
+    data = {
+        "uri": "/foo",
+        "headers": {
+            "cloudfront-viewer-country": [
+                {
+                    "key": "CloudFront-Viewer-Country",
+                    "value": "US"
+                }
+            ],
+            "cookie": [
+                {
+                    "key": "cookie",
+                    "value": "somename=put_a_cookie_value_here"
+                }
+            ],
+        }
+    }
+
+    data.update(fragment)
+    return Request(data)
+
 def test_get_uri_when_present(mocker):
-    request = Request({"uri": "/psychology"})
+    request = new_request({"uri": "/psychology"})
     assert request.get_uri() == "/psychology"
 
 def test_get_uri_when_absent(mocker):
@@ -13,12 +35,12 @@ def test_get_uri_when_absent(mocker):
     assert request.get_uri() == None
 
 def test_set_uri(mocker):
-    request = Request({"uri": "foo"})
+    request = new_request({"uri": "foo"})
     request.set_uri("bar")
     assert request.to_dict()["uri"] == "bar"
 
 def test_get_cookie_when_header_present(mocker):
-    request = Request({
+    request = new_request({
         "headers": {
             "cookie": [
                 {
@@ -34,10 +56,7 @@ def test_get_cookie_when_header_present(mocker):
     assert request.get_cookie(name="howdy") == None
 
 def test_get_cookie_when_header_absent(mocker):
-    request = Request({
-        "headers": {
-        }
-    })
+    request = new_request({"headers": {}})
 
     assert request.get_cookie(name="howdy") == None
 
@@ -46,7 +65,7 @@ def test_to_dict(mocker):
     assert request.to_dict() == {"blah": "foo"}
 
 def test_viewer_country_when_header_present(mocker):
-    request = Request({
+    request = new_request({
         "headers": {
             "cloudfront-viewer-country": [
                 {
@@ -60,8 +79,5 @@ def test_viewer_country_when_header_present(mocker):
     assert request.viewer_country() == "US"
 
 def test_viewer_country_when_header_absent(mocker):
-    request = Request({
-        "headers": {}
-    })
-
+    request = new_request({"headers": {}})
     assert request.viewer_country() == None
