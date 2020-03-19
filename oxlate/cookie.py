@@ -2,7 +2,9 @@ import re
 import datetime
 
 class Cookie:
-    def __init__(self, name, value=None, expires_at=None, expires_days_from_now=None, path=None, domain=None):
+    def __init__(self, name, value=None,
+                 expires_at=None, expires_days_from_now=None,
+                 path=None, domain=None):
         if expires_at and expires_days_from_now:
             raise ValueError("Do not specify both `expires_at` and `expires_days_from_now`")
         elif expires_days_from_now:

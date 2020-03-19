@@ -1,26 +1,20 @@
-from .utils import string_to_case_number, case_number_to_string
+import re
+
+ALPHA_REGEX = re.compile('[^a-zA-Z]')
 
 class Headers:
     def __init__(self):
         self._data = {}
+        self._duplicate_name_counts = {}
 
+    # See https://forums.aws.amazon.com/thread.jspa?messageID=701434 about the duplicate stuff
     def add(self, name, value, adjust_case_to_allow_duplicates=False):
-        # import ipdb; ipdb.set_trace()
         if adjust_case_to_allow_duplicates:
-            if self._data.get(name):
-                # Collision, need to change case
-                same_names_case_insensitive = list(filter(lambda key: key.lower() == name.lower(), self._data.keys()))
-                existing_names_case_binary_representations = set(map(string_to_case_number, same_names_case_insensitive))
-                available_case_binary_representations = sorted(set(range(pow(2,len(name)))) - existing_names_case_binary_representations)
+            duplicate_name_count = self._duplicate_name_counts[name.lower()] = \
+                self._duplicate_name_counts.get(name.lower(), -1) + 1
 
-                if len(available_case_binary_representations) == 0:
-                    raise RuntimeError("There are no more case variants for header name " + name)
-                else:
-                    new_name = case_number_to_string(name, available_case_binary_representations[0])
-                    self._data[new_name] = value
-            else:
-                # No collision
-                self._data[name] = value
+            deduped_name = self._toggle_case_based_on_number(name, duplicate_name_count)
+            self._data[deduped_name] = value
         else:
             self._data[name] = value
 
@@ -36,3 +30,28 @@ class Headers:
             ]
 
         return result
+
+    def _toggle_case_based_on_number(self, string, number):
+        alpha_only_string = ALPHA_REGEX.sub('', string)
+
+        if number >= pow(2,len(alpha_only_string)):
+            raise RuntimeError("There are no more case variants for header name " + string)
+
+        number_as_binary_string = ('{0:' + str(len(alpha_only_string)) + 'b}').format(number)
+
+        string_cursor = 0
+        result = []
+
+        # Move through the 1's and 0's in the binary string, changing cases in the input
+        # string for alpha characters only.
+        for bit in number_as_binary_string:
+            while not string[string_cursor].isalpha():
+                # skip non alpha characters
+                result.append(string[string_cursor])
+                string_cursor = string_cursor + 1
+
+            # switch this letter to be upper or lower based on binary representation
+            result.append(string[string_cursor].upper() if bit == "1" else string[string_cursor].lower())
+            string_cursor = string_cursor + 1
+
+        return "".join(result)

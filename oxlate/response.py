@@ -36,6 +36,9 @@ class Response:
         self._cookies.append(Cookie(name=name, value=value, expires_at=expires_at, path=path, domain=domain))
         return self
 
+    def delete_cookie(self, name, path=None, domain=None):
+        self._cookies.append(Cookie(name=name, value="", expires_days_from_now=-1000, path=path, domain=domain))
+
     def set_header(self, name, value):
         self._headers.add(name=name, value=value)
         return self

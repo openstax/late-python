@@ -3,6 +3,7 @@ import pytest
 import ipdb
 
 from oxlate import Response
+from .pytest_regex import pytest_regex
 
 def test_basic(mocker):
     response = Response(body="Hi")
@@ -25,10 +26,25 @@ def test_cookies(mocker):
     assert response.to_dict() == {
         'status': 200,
         'headers': {
-            'Set-Cookie': [
+            'set-cookie': [
                 {
-                    'key': 'Set-Cookie',
+                    'key': 'set-cookie',
                     'value': 'foo=bar'
+                }
+            ]
+        }
+    }
+
+def test_delete_cookie(mocker):
+    response = Response()
+    response.delete_cookie(name="foo")
+    assert response.to_dict() == {
+        'status': 200,
+        'headers': {
+            'set-cookie': [
+                {
+                    'key': 'set-cookie',
+                    'value': pytest_regex('foo=; Expires=.*')
                 }
             ]
         }
@@ -53,15 +69,15 @@ def test_more(mocker):
                     'value': 'application/json'
                 }
             ],
-            'Set-Cookie': [
-                {
-                    'key': 'Set-Cookie',
-                    'value': 'foo=bar'
-                }
-            ],
             'set-cookie': [
                 {
                     'key': 'set-cookie',
+                    'value': 'foo=bar'
+                }
+            ],
+            'set-cookiE': [
+                {
+                    'key': 'set-cookiE',
                     'value': 'yoyo=ma'
                 }
             ],
