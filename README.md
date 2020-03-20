@@ -6,7 +6,23 @@ A Python package with OpenStax Lambda@Edge ("lAMBDA at eDGE") utilities.
 
 ## Usage
 
-...
+```python
+from oxlate import Event, Request, Response
+
+def lambda_handler(event, context):
+    request = Event(event).request()
+
+    request.get_uri()
+    request.set_uri("something") # used when changing the request mid-flight
+    request.get_cookie("auth")
+    request.viewer_country()  # requires 'cloudfront-viewer-country' header forwarding
+
+
+    response = Response(status=302) \
+                   .set_header(name='Location', value='https://openstax.org')
+
+    return response.to_dict()
+```
 
 ## Development
 
