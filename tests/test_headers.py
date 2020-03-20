@@ -55,6 +55,43 @@ def test_add_allowing_duplicates(mocker):
         ]
     }
 
+def test_add_allowing_duplicates_left_of_hyphen(mocker):
+    headers = Headers()
+    headers.add(name="a-a", value="bar", adjust_case_to_allow_duplicates=True)
+    headers.add(name="A-A", value="howdy", adjust_case_to_allow_duplicates=True)
+    headers.add(name="A-a", value="yoyo", adjust_case_to_allow_duplicates=True)
+    headers.add(name="a-A", value="boo", adjust_case_to_allow_duplicates=True)
+    assert headers.to_dict() == {
+        "a-a": [
+            {
+                'key': 'a-a',
+                'value': 'bar'
+            }
+        ],
+        "a-A": [
+            {
+                'key': 'a-A',
+                'value': 'howdy'
+            }
+        ],
+        "A-a": [
+            {
+                'key': 'A-a',
+                'value': 'yoyo'
+            }
+        ],
+        "A-A": [
+            {
+                'key': 'A-A',
+                'value': 'boo'
+            }
+        ]
+    }
+
+    with pytest.raises(RuntimeError, match=r".*no more case variants.*"):
+        headers.add(name="a-a", value="yoyo", adjust_case_to_allow_duplicates=True)
+
+
 def test_add_allowing_duplicates_but_none_left(mocker):
     headers = Headers()
     headers.add(name="a", value="bar", adjust_case_to_allow_duplicates=True)
