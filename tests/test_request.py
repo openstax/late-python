@@ -3,6 +3,7 @@ import pytest
 import ipdb
 
 from oxlate import Request
+from oxlate import Headers
 
 def new_request(fragment):
     data = {
@@ -26,58 +27,86 @@ def new_request(fragment):
     data.update(fragment)
     return Request(data)
 
-def test_get_uri_when_present(mocker):
+def test_get_uri():
     request = new_request({"uri": "/psychology"})
     assert request.get_uri() == "/psychology"
 
-def test_get_uri_when_absent(mocker):
-    request = Request({})
-    assert request.get_uri() == None
-
-def test_set_uri(mocker):
+def test_set_uri():
     request = new_request({"uri": "foo"})
     request.set_uri("bar")
-    assert request.to_dict()["uri"] == "bar"
+    assert request.get_uri() == "bar"
 
-def test_get_cookie_when_header_present(mocker):
+def test_get_headers_returns_Headers_instance():
     request = new_request({
-        "headers": {
-            "cookie": [
-                {
-                    "key": "cookie",
-                    "value": "somename=blah; other=foo"
-                }
-            ],
+        'headers': {
+            'some_key': [{
+                'key':   'some_key',
+                'value': 'some_value',
+            }]
         }
     })
 
-    assert request.get_cookie(name="somename") == "blah"
-    assert request.get_cookie(name="other") == "foo"
-    assert request.get_cookie(name="howdy") == None
+    headers = request.get_headers()
+    assert isinstance(headers, Headers)
 
-def test_get_cookie_when_header_absent(mocker):
-    request = new_request({"headers": {}})
-
-    assert request.get_cookie(name="howdy") == None
-
-def test_to_dict(mocker):
-    request = Request({"blah": "foo"})
-    assert request.to_dict() == {"blah": "foo"}
-
-def test_viewer_country_when_header_present(mocker):
+def test_get_headers_maps_Headers_instance_to_underlying_data():
     request = new_request({
-        "headers": {
-            "cloudfront-viewer-country": [
-                {
-                    "key": "CloudFront-Viewer-Country",
-                    "value": "US"
-                }
-            ]
+        'headers': {
+            'some_key': [{
+                'key':   'some_key',
+                'value': 'some_value',
+            }]
         }
     })
 
-    assert request.viewer_country() == "US"
+    headers = request.get_headers()
+    headers.set(name='another_key', value='another_value')
 
-def test_viewer_country_when_header_absent(mocker):
-    request = new_request({"headers": {}})
-    assert request.viewer_country() == None
+    new_headers = request.get_headers()
+
+    assert new_headers.get(name='some_key')    == [{'key': 'some_key',    'value': 'some_value'}]
+    assert new_headers.get(name='another_key') == [{'key': 'another_key', 'value': 'another_value'}]
+
+
+# def test_get_cookie_when_header_present(mocker):
+#     request = new_request({
+#         "headers": {
+#             "cookie": [
+#                 {
+#                     "key": "cookie",
+#                     "value": "somename=blah; other=foo"
+#                 }
+#             ],
+#         }
+#     })
+
+#     assert request.get_cookie(name="somename") == "blah"
+#     assert request.get_cookie(name="other") == "foo"
+#     assert request.get_cookie(name="howdy") == None
+
+# def test_get_cookie_when_header_absent(mocker):
+#     request = new_request({"headers": {}})
+
+#     assert request.get_cookie(name="howdy") == None
+
+# def test_to_dict(mocker):
+#     request = Request({"blah": "foo"})
+#     assert request.to_dict() == {"blah": "foo"}
+
+# def test_viewer_country_when_header_present(mocker):
+#     request = new_request({
+#         "headers": {
+#             "cloudfront-viewer-country": [
+#                 {
+#                     "key": "CloudFront-Viewer-Country",
+#                     "value": "US"
+#                 }
+#             ]
+#         }
+#     })
+
+#     assert request.viewer_country() == "US"
+
+# def test_viewer_country_when_header_absent(mocker):
+#     request = new_request({"headers": {}})
+#     assert request.viewer_country() == None

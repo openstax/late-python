@@ -1,10 +1,10 @@
+from oxlate import Cookie
+
 import json
 import pytest
 import ipdb
 import datetime
 import re
-
-from oxlate import Cookie
 
 def test_basic(mocker):
     cookie = Cookie(name="foo", value="bar")

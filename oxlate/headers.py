@@ -1,35 +1,43 @@
 import re
+from copy import deepcopy
 
 ALPHA_REGEX = re.compile('[^a-zA-Z]')
 
 class Headers:
-    def __init__(self):
-        self._data = {}
+    def __init__(self, data=None):
+        self._data = {} if data is None else data
+
         self._duplicate_name_counts = {}
+        for name in self._data.keys():
+            if name.lower() not in self._duplicate_name_counts:
+                self._duplicate_name_counts[name.lower()] = -1
+            self._duplicate_name_counts[name.lower()] += 1
+
+    def get(self, name, default=None):
+        return self._data.get(name, default)
+
+    def get_value(self, name, default=None):
+        return self._data.get(name, [{}])[0].get('value', default)
 
     # See https://forums.aws.amazon.com/thread.jspa?messageID=701434 about the duplicate stuff
-    def add(self, name, value, adjust_case_to_allow_duplicates=False):
+    def set(self, name, value, adjust_case_to_allow_duplicates=False):
         if adjust_case_to_allow_duplicates:
             duplicate_name_count = self._duplicate_name_counts[name.lower()] = \
                 self._duplicate_name_counts.get(name.lower(), -1) + 1
-
-            deduped_name = self._toggle_case_based_on_number(name, duplicate_name_count)
-            self._data[deduped_name] = value
+            adjusted_name = self._toggle_case_based_on_number(name, duplicate_name_count)
         else:
-            self._data[name] = value
+            adjusted_name = name
+
+        adjusted_value = [{
+            'key':   adjusted_name,
+            'value': value,
+        }]
+
+        self._data[adjusted_name] = adjusted_value
+        return self
 
     def to_dict(self):
-        result = {}
-
-        for key in self._data:
-            result[key] = [
-                {
-                    'key': key,
-                    'value': self._data[key]
-                }
-            ]
-
-        return result
+        return deepcopy(self._data)
 
     def _toggle_case_based_on_number(self, string, number):
         alpha_only_string = ALPHA_REGEX.sub('', string)
@@ -39,19 +47,19 @@ class Headers:
 
         number_as_binary_string = ('{0:' + str(len(alpha_only_string)) + 'b}').format(number)
 
-        string_cursor = 0
         result = []
 
         # Move through the 1's and 0's in the binary string, changing cases in the input
         # string for alpha characters only.
+        char_idx = 0
         for bit in number_as_binary_string:
-            while not string[string_cursor].isalpha():
+            while not string[char_idx].isalpha():
                 # skip non alpha characters
-                result.append(string[string_cursor])
-                string_cursor = string_cursor + 1
+                result.append(string[char_idx])
+                char_idx += 1
 
             # switch this letter to be upper or lower based on binary representation
-            result.append(string[string_cursor].upper() if bit == "1" else string[string_cursor].lower())
-            string_cursor = string_cursor + 1
+            result.append(string[char_idx].upper() if bit == "1" else string[char_idx].lower())
+            char_idx += 1
 
-        return "".join(result)
+        return ''.join(result)

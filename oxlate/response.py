@@ -40,7 +40,7 @@ class Response:
         self._cookies.append(Cookie(name=name, value="", expires_days_from_now=-1000, path=path, domain=domain))
 
     def set_header(self, name, value):
-        self._headers.add(name=name, value=value)
+        self._headers.set(name=name, value=value)
         return self
 
     def to_dict(self):
@@ -50,10 +50,10 @@ class Response:
 
         if self._body is not None:
             result['body'] = self.__encoded_body()
-            self._headers.add(name='Content-Type', value=self._content_type)
+            self._headers.set(name='Content-Type', value=self._content_type)
 
         for cookie in self._cookies:
-            self._headers.add(name='Set-Cookie', value=cookie.value(), adjust_case_to_allow_duplicates=True)
+            self._headers.set(name='Set-Cookie', value=cookie.value(), adjust_case_to_allow_duplicates=True)
 
         result['headers'] = self._headers.to_dict()
 
