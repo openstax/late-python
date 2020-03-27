@@ -4,21 +4,34 @@ from copy import deepcopy
 ALPHA_REGEX = re.compile('[^a-zA-Z]')
 
 class RequestCookies:
-    def __init__(self, string=''):
-        self.string = string
-        self.parsed_cookies = RequestCookies._parse_cookies(self.string)
+    def __init__(self, data):
+        self._data = data
 
     def set(self, name, value=''):
-        self.parsed_cookies[name] = value
+        if 'cookie' not in self._data:
+            self._data['cookie'] = [{'key': 'Cookie', 'value': ''}]
+        old_cookie_string = self._data['cookie'][0]['value']
+
+        parsed_cookies = RequestCookies._parse_cookies(old_cookie_string)
+        parsed_cookies[name] = value
+
+        new_cookie_string = RequestCookies._cookie_string(parsed_cookies)
+        self._data['cookie'][0]['value'] = new_cookie_string
+
         return self
 
     def get(self, name, default=None):
-        return self.parsed_cookies.get(name, default)
+        cookie_string = self._data \
+                            .get('cookie', [{}])[0] \
+                            .get('value', '')
+        parsed_cookies = RequestCookies._parse_cookies(cookie_string)
+        return parsed_cookies.get(name, default)
 
-    def cookie_string(self):
+    @staticmethod
+    def _cookie_string(parsed_cookies):
         entries = map(
             lambda elem: '{}={}'.format(elem[0], elem[1]),
-            self.parsed_cookies.items(),
+            parsed_cookies.items(),
         )
         return ';'.join(entries)
 
@@ -31,6 +44,46 @@ class RequestCookies:
                 parsed_cookies[parts[0].strip()] = parts[1].strip()
         return parsed_cookies
 
+class ResponseCookie:
+    def __init__(self, string):
+        self._string     = string
+        self._name       = None
+        self._value      = None
+        self._expires_at = None
+        self._path       = None
+        self._domain     = None
+
+        for chunk in self._string.split(';'):
+            match = re.search(r'\AExpires=(.+)\Z', chunk.strip())
+            if match:
+                continue
+
+            match = re.search(r'\A(.+)=(.*)\Z', chunk.strip())
+            if match:
+                self._name  = match.group(1)
+                self._value = match.group(2) if len(match.group(2)) > 0 else None
+
+    def name(self):
+        return self._name
+
+    def value(self):
+        return self._value
+
+class ResponseCookies:
+    def __init__(self, data):
+        self._data = data
+
+    def get(self, name, default=None):
+        for key,value in self._data.items():
+            if key.lower() == 'set-cookie':
+                response_cookie = ResponseCookie(value[0]['value'])
+                if response_cookie.name() == name:
+                    return response_cookie.value()
+        return default
+
+
+    def set(self, name, value):
+        return self
 
 class Headers:
     def __init__(self, data=None):
@@ -66,17 +119,21 @@ class Headers:
         return self
 
     def get_request_cookie(self, name, default=None):
-        cookie_string = self._data.get('cookie', [{}])[0].get('value', '')
-        request_cookies = RequestCookies(cookie_string)
+        request_cookies = RequestCookies(self._data)
         return request_cookies.get(name, default)
 
     def set_request_cookie(self, name, value):
-        if 'cookie' not in self._data:
-            self._data['cookie'] = [{'key': 'Cookie', 'value': ''}]
-        cookie_string = self._data['cookie'][0]['value']
-        request_cookies = RequestCookies(cookie_string)
+        request_cookies = RequestCookies(self._data)
         request_cookies.set(name, value)
-        self._data['cookie'][0]['value'] = request_cookies.cookie_string()
+        return self
+
+    def get_response_cookie(self, name):
+        response_cookies = ResponseCookies(self._data)
+        return response_cookies.get(name, default=None)
+
+    def set_response_cookie(self, name, value):
+        response_cookies = ResponseCookies(self._data)
+        response_cookies.set(name=name, value=value)
         return self
 
     def to_dict(self):
@@ -106,12 +163,3 @@ class Headers:
             char_idx += 1
 
         return ''.join(result)
-
-    # def _parsedCookies(self):
-    #     parsedCookies = {}
-    #     if self._data.get('cookie', None):
-    #         for cookie in self._data['cookie'][0]['value'].split(';'):
-    #             if cookie:
-    #                 parts = cookie.split('=')
-    #                 parsedCookies[parts[0].strip()] = parts[1].strip()
-    #     return parsedCookies

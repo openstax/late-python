@@ -226,3 +226,40 @@ def test_set_new_request_cookie_with_cookies_present():
     assert headers.get_request_cookie(name='biz') == 'buz'
     assert headers.get_request_cookie(name='baz') == 'bar'
     assert headers.get_request_cookie(name='foo') == 'bar'
+
+def test_set_existing_request_cookie():
+    headers = Headers({
+        'cookie': [{
+            'key': 'Cookie',
+            'value': 'biz=buz; foo=bar; baz=bar',
+        }]
+    })
+
+    headers.set_request_cookie(name='foo', value='bub')
+
+    assert headers.get_request_cookie(name='biz') == 'buz'
+    assert headers.get_request_cookie(name='baz') == 'bar'
+    assert headers.get_request_cookie(name='foo') == 'bub'
+
+def test_get_response_cookie_missing_returns_None():
+    headers = Headers()
+    assert headers.get_response_cookie(name='foo') is None
+
+def test_get_response_cookie_returns_cookie_value():
+    headers = Headers({
+        'set-cookie': [
+            {'key': 'set-cookie', 'value': 'bar=baz'},
+        ],
+        'set-cookiE': [
+            {'key': 'set-cookiE', 'value': 'foo=bar'},
+        ],
+        'set-cookIe': [
+            {'key': 'set-cookIe', 'value': 'boo=baz'},
+        ],
+    })
+    assert headers.get_response_cookie(name='foo') == 'bar'
+
+# def test_set_new_response_cookie_no_cookies_present():
+#     headers = Headers()
+#     headers.set_response_cookie(name='foo', value='bar')
+#     assert headers.get_response_cookie(name='foo') == 'bar'
