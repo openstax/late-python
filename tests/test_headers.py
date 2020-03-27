@@ -182,3 +182,47 @@ def test_set_allowing_duplicates_with_given_data():
         }],
     }
 
+def test_get_request_cookie_missing_returns_None():
+    headers = Headers()
+    assert headers.get_request_cookie(name='foo') is None
+
+def test_get_request_cookie_missing_returns_given_default():
+    headers = Headers()
+    assert headers.get_request_cookie(name='foo', default='abc') == 'abc'
+
+def test_get_request_cookie_returns_cookie_value_empty_string():
+    headers = Headers({
+        'cookie': [{
+            'key': 'Cookie',
+            'value': 'biz=buz; foo=; yo=dawg',
+        }]
+    })
+    assert headers.get_request_cookie(name='foo') == ''
+
+def test_get_request_cookie_returns_cookie_value():
+    headers = Headers({
+        'cookie': [{
+            'key': 'Cookie',
+            'value': 'biz=buz; foo=bar; yo=dawg',
+        }]
+    })
+    assert headers.get_request_cookie(name='foo') == 'bar'
+
+def test_set_new_request_cookie_with_no_cookies_present():
+    headers = Headers()
+    headers.set_request_cookie(name='foo', value='bar')
+    assert headers.get_request_cookie(name='foo') == 'bar'
+
+def test_set_new_request_cookie_with_cookies_present():
+    headers = Headers({
+        'cookie': [{
+            'key': 'Cookie',
+            'value': 'biz=buz; baz=bar',
+        }]
+    })
+
+    headers.set_request_cookie(name='foo', value='bar')
+
+    assert headers.get_request_cookie(name='biz') == 'buz'
+    assert headers.get_request_cookie(name='baz') == 'bar'
+    assert headers.get_request_cookie(name='foo') == 'bar'
