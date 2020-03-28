@@ -1,4 +1,5 @@
 from oxlate import Headers
+from oxlate import ResponseCookie
 
 import json
 import pytest
@@ -245,7 +246,7 @@ def test_get_response_cookie_missing_returns_None():
     headers = Headers()
     assert headers.get_response_cookie(name='foo') is None
 
-def test_get_response_cookie_returns_cookie_value():
+def test_get_response_cookie_returns_ResponseCookie():
     headers = Headers({
         'set-cookie': [
             {'key': 'set-cookie', 'value': 'bar=baz'},
@@ -257,9 +258,60 @@ def test_get_response_cookie_returns_cookie_value():
             {'key': 'set-cookIe', 'value': 'boo=baz'},
         ],
     })
-    assert headers.get_response_cookie(name='foo') == 'bar'
 
-# def test_set_new_response_cookie_no_cookies_present():
-#     headers = Headers()
-#     headers.set_response_cookie(name='foo', value='bar')
-#     assert headers.get_response_cookie(name='foo') == 'bar'
+    cookie = headers.get_response_cookie(name='foo')
+
+    assert isinstance(cookie, ResponseCookie)
+    assert cookie.name()  == 'foo'
+    assert cookie.value() == 'bar'
+
+def test_set_new_response_cookie_no_cookies_present():
+    headers = Headers()
+    cookie = ResponseCookie(
+        name='foo',
+        value='bar',
+    )
+    headers.set_response_cookie(cookie)
+
+    assert headers.get_response_cookie(name='foo').value() == 'bar'
+
+def test_set_new_response_cookie_cookies_present():
+    headers = Headers({
+        'set-cookie': [
+            {'key': 'set-cookie', 'value': 'bar=baz'},
+        ],
+        'set-cookiE': [
+            {'key': 'set-cookIe', 'value': 'boo=baz'},
+        ],
+    })
+    cookie = ResponseCookie(
+        name='foo',
+        value='bar',
+    )
+    headers.set_response_cookie(cookie)
+
+    assert headers.get_response_cookie(name='bar').value() == 'baz'
+    assert headers.get_response_cookie(name='boo').value() == 'baz'
+    assert headers.get_response_cookie(name='foo').value() == 'bar'
+
+def test_set_existing_response_cookie():
+    headers = Headers({
+        'set-cookie': [
+            {'key': 'set-cookie', 'value': 'bar=baz'},
+        ],
+        'set-cookiE': [
+            {'key': 'set-cookiE', 'value': 'foo=bar'},
+        ],
+        'set-cookIe': [
+            {'key': 'set-cookIe', 'value': 'boo=baz'},
+        ],
+    })
+    cookie = ResponseCookie(
+        name='foo',
+        value='new',
+    )
+    headers.set_response_cookie(cookie)
+
+    assert headers.get_response_cookie(name='bar').value() == 'baz'
+    assert headers.get_response_cookie(name='foo').value() == 'new'
+    assert headers.get_response_cookie(name='boo').value() == 'baz'

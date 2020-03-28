@@ -45,29 +45,46 @@ class RequestCookies:
         return parsed_cookies
 
 class ResponseCookie:
-    def __init__(self, string):
-        self._string     = string
-        self._name       = None
-        self._value      = None
-        self._expires_at = None
-        self._path       = None
-        self._domain     = None
-
-        for chunk in self._string.split(';'):
-            match = re.search(r'\AExpires=(.+)\Z', chunk.strip())
-            if match:
-                continue
-
-            match = re.search(r'\A(.+)=(.*)\Z', chunk.strip())
-            if match:
-                self._name  = match.group(1)
-                self._value = match.group(2) if len(match.group(2)) > 0 else None
+    def __init__(self, name, value=None, expires_at=None, path=None, domain=None):
+        self._name       = name
+        self._value      = value
+        self._expires_at = expires_at
+        self._path       = path
+        self._domain     = domain
 
     def name(self):
         return self._name
 
     def value(self):
         return self._value
+
+    def to_cookie_string(self):
+        chunks = []
+        chunks.append('{}={}'.format(self._name, self._value))
+        return ';'.join(chunks)
+
+    @staticmethod
+    def from_cookie_string(string):
+        name       = None
+        value      = None
+        expires_at = None
+        path       = None
+        domain     = None
+
+        for chunk in string.split(';'):
+            match = re.search(r'\AExpires=(.+)\Z', chunk.strip())
+            if match:
+                continue
+
+            match = re.search(r'\A(.+)=(.*)\Z', chunk.strip())
+            if match:
+                name  = match.group(1)
+                value = match.group(2) if len(match.group(2)) > 0 else None
+
+        return ResponseCookie(
+            name  = name,
+            value = value,
+        )
 
 class ResponseCookies:
     def __init__(self, data):
@@ -76,13 +93,32 @@ class ResponseCookies:
     def get(self, name, default=None):
         for key,value in self._data.items():
             if key.lower() == 'set-cookie':
-                response_cookie = ResponseCookie(value[0]['value'])
+                response_cookie = ResponseCookie.from_cookie_string(value[0]['value'])
                 if response_cookie.name() == name:
-                    return response_cookie.value()
+                    return response_cookie
         return default
 
+    def set(self, cookie):
+        cookie_string  = cookie.to_cookie_string()
+        cookie_counter = 0
 
-    def set(self, name, value):
+        for key,value in self._data.items():
+            if key.lower() == 'set-cookie':
+                cookie_counter += 1
+                current_cookie = ResponseCookie.from_cookie_string(value[0]['value'])
+                if current_cookie.name() == cookie.name():
+                    value[0]['value'] = cookie_string
+                    return self
+
+        key = Headers._toggle_case_based_on_number(
+            string = 'set-cookie',
+            number = cookie_counter,
+        )
+        self._data[key] = [{
+            'key':   key,
+            'value': cookie_string,
+        }]
+
         return self
 
 class Headers:
@@ -106,7 +142,7 @@ class Headers:
         if adjust_case_to_allow_duplicates:
             duplicate_name_count = self._duplicate_name_counts[name.lower()] = \
                 self._duplicate_name_counts.get(name.lower(), -1) + 1
-            adjusted_name = self._toggle_case_based_on_number(name, duplicate_name_count)
+            adjusted_name = Headers._toggle_case_based_on_number(name, duplicate_name_count)
         else:
             adjusted_name = name
 
@@ -131,15 +167,16 @@ class Headers:
         response_cookies = ResponseCookies(self._data)
         return response_cookies.get(name, default=None)
 
-    def set_response_cookie(self, name, value):
+    def set_response_cookie(self, cookie):
         response_cookies = ResponseCookies(self._data)
-        response_cookies.set(name=name, value=value)
+        response_cookies.set(cookie)
         return self
 
     def to_dict(self):
         return deepcopy(self._data)
 
-    def _toggle_case_based_on_number(self, string, number):
+    @staticmethod
+    def _toggle_case_based_on_number(string, number):
         alpha_only_string = ALPHA_REGEX.sub('', string)
 
         if number >= pow(2,len(alpha_only_string)):
