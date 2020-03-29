@@ -1,7 +1,33 @@
-import re
 from copy import deepcopy
+from datetime import datetime
+import re
 
 ALPHA_REGEX = re.compile('[^a-zA-Z]')
+
+def _toggle_case_based_on_number(string, number):
+    alpha_only_string = ALPHA_REGEX.sub('', string)
+
+    if number >= pow(2,len(alpha_only_string)):
+        raise RuntimeError("There are no more case variants for header name " + string)
+
+    number_as_binary_string = ('{0:' + str(len(alpha_only_string)) + 'b}').format(number)
+
+    result = []
+
+    # Move through the 1's and 0's in the binary string, changing cases in the input
+    # string for alpha characters only.
+    char_idx = 0
+    for bit in number_as_binary_string:
+        while not string[char_idx].isalpha():
+            # skip non alpha characters
+            result.append(string[char_idx])
+            char_idx += 1
+
+        # switch this letter to be upper or lower based on binary representation
+        result.append(string[char_idx].upper() if bit == "1" else string[char_idx].lower())
+        char_idx += 1
+
+    return ''.join(result)
 
 class RequestCookies:
     def __init__(self, data):
@@ -58,9 +84,30 @@ class ResponseCookie:
     def value(self):
         return self._value
 
+    def expires_at(self):
+        return self._expires_at
+
+    def path(self):
+        return self._path
+
+    def domain(self):
+        return self._domain
+
     def to_cookie_string(self):
         chunks = []
+
         chunks.append('{}={}'.format(self._name, self._value))
+
+        if self._expires_at:
+            expires_string = self._expires_at.strftime('%a, %d %b %Y %H:%M:%S.%f GMT')
+            chunks.append('Expires={}'.format(expires_string))
+
+        if self._path:
+            chunks.append('Path={}'.format(self._path))
+
+        if self._domain:
+            chunks.append('Domain={}'.format(self._domain))
+
         return ';'.join(chunks)
 
     @staticmethod
@@ -74,16 +121,31 @@ class ResponseCookie:
         for chunk in string.split(';'):
             match = re.search(r'\AExpires=(.+)\Z', chunk.strip())
             if match:
+                expires_at = datetime.strptime(match.group(1), '%a, %d %b %Y %H:%M:%S.%f GMT')
+                continue
+
+            match = re.search(r'\APath=(.+)\Z', chunk.strip())
+            if match:
+                path = match.group(1)
+                continue
+
+            match = re.search(r'\ADomain=(.+)\Z', chunk.strip())
+            if match:
+                domain = match.group(1)
                 continue
 
             match = re.search(r'\A(.+)=(.*)\Z', chunk.strip())
             if match:
                 name  = match.group(1)
                 value = match.group(2) if len(match.group(2)) > 0 else None
+                continue
 
         return ResponseCookie(
-            name  = name,
-            value = value,
+            name       = name,
+            value      = value,
+            expires_at = expires_at,
+            path       = path,
+            domain     = domain,
         )
 
 class ResponseCookies:
@@ -110,7 +172,7 @@ class ResponseCookies:
                     value[0]['value'] = cookie_string
                     return self
 
-        key = Headers._toggle_case_based_on_number(
+        key = _toggle_case_based_on_number(
             string = 'set-cookie',
             number = cookie_counter,
         )
@@ -142,7 +204,7 @@ class Headers:
         if adjust_case_to_allow_duplicates:
             duplicate_name_count = self._duplicate_name_counts[name.lower()] = \
                 self._duplicate_name_counts.get(name.lower(), -1) + 1
-            adjusted_name = Headers._toggle_case_based_on_number(name, duplicate_name_count)
+            adjusted_name = _toggle_case_based_on_number(name, duplicate_name_count)
         else:
             adjusted_name = name
 
@@ -174,29 +236,3 @@ class Headers:
 
     def to_dict(self):
         return deepcopy(self._data)
-
-    @staticmethod
-    def _toggle_case_based_on_number(string, number):
-        alpha_only_string = ALPHA_REGEX.sub('', string)
-
-        if number >= pow(2,len(alpha_only_string)):
-            raise RuntimeError("There are no more case variants for header name " + string)
-
-        number_as_binary_string = ('{0:' + str(len(alpha_only_string)) + 'b}').format(number)
-
-        result = []
-
-        # Move through the 1's and 0's in the binary string, changing cases in the input
-        # string for alpha characters only.
-        char_idx = 0
-        for bit in number_as_binary_string:
-            while not string[char_idx].isalpha():
-                # skip non alpha characters
-                result.append(string[char_idx])
-                char_idx += 1
-
-            # switch this letter to be upper or lower based on binary representation
-            result.append(string[char_idx].upper() if bit == "1" else string[char_idx].lower())
-            char_idx += 1
-
-        return ''.join(result)

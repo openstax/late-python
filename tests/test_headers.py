@@ -1,8 +1,10 @@
 from oxlate import Headers
 from oxlate import ResponseCookie
 
+import datetime
 import json
 import pytest
+
 import ipdb
 
 def test_get_missing_header_no_default_returns_None():
@@ -306,6 +308,7 @@ def test_set_existing_response_cookie():
             {'key': 'set-cookIe', 'value': 'boo=baz'},
         ],
     })
+
     cookie = ResponseCookie(
         name='foo',
         value='new',
@@ -315,3 +318,23 @@ def test_set_existing_response_cookie():
     assert headers.get_response_cookie(name='bar').value() == 'baz'
     assert headers.get_response_cookie(name='foo').value() == 'new'
     assert headers.get_response_cookie(name='boo').value() == 'baz'
+
+def test_set_response_cookie_sets_all_cookie_fields():
+    headers = Headers()
+
+    expires_at = datetime.datetime.utcnow() + datetime.timedelta(days=3.1415)
+
+    cookie = ResponseCookie(
+        name       = 'foo',
+        value      = 'bar',
+        expires_at = expires_at,
+        path       = '/path',
+        domain     = 'mydomain.com',
+    )
+    headers.set_response_cookie(cookie)
+
+    assert headers.get_response_cookie(name='foo').name()       == 'foo'
+    assert headers.get_response_cookie(name='foo').value()      == 'bar'
+    assert headers.get_response_cookie(name='foo').expires_at() == expires_at
+    assert headers.get_response_cookie(name='foo').path()       == '/path'
+    assert headers.get_response_cookie(name='foo').domain()     == 'mydomain.com'
