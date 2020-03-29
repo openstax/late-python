@@ -2,14 +2,12 @@ import json
 import re
 
 from .headers import Headers
-from .cookie import Cookie
 
 class Response:
     def __init__(self, status=200, content_type='text/plain', body=None):
         self.set_status(status)
         self.set_content_type(content_type)
         self.set_body(body)
-        self._cookies = []
         self._headers = Headers()
 
     def set_status(self, value):
@@ -32,16 +30,19 @@ class Response:
         self._body = body
         return self
 
-    def add_cookie(self, name, value=None, expires_at=None, path=None, domain=None):
-        self._cookies.append(Cookie(name=name, value=value, expires_at=expires_at, path=path, domain=domain))
-        return self
+    def get_headers(self):
+        return self._headers
 
-    def delete_cookie(self, name, path=None, domain=None):
-        self._cookies.append(Cookie(name=name, value="", expires_days_from_now=-1000, path=path, domain=domain))
+    # def add_cookie(self, name, value=None, expires_at=None, path=None, domain=None):
+    #     self._cookies.append(Cookie(name=name, value=value, expires_at=expires_at, path=path, domain=domain))
+    #     return self
 
-    def set_header(self, name, value):
-        self._headers.set(name=name, value=value)
-        return self
+    # def delete_cookie(self, name, path=None, domain=None):
+    #     self._cookies.append(Cookie(name=name, value="", expires_days_from_now=-1000, path=path, domain=domain))
+
+    # def set_header(self, name, value):
+    #     self._headers.set(name=name, value=value)
+    #     return self
 
     def to_dict(self):
         result = {
@@ -52,10 +53,13 @@ class Response:
             result['body'] = self.__encoded_body()
             self._headers.set(name='Content-Type', value=self._content_type)
 
-        for cookie in self._cookies:
-            self._headers.set(name='Set-Cookie', value=cookie.value(), adjust_case_to_allow_duplicates=True)
+        if self._headers is not None:
+            result['headers'] = self._headers.to_dict()
 
-        result['headers'] = self._headers.to_dict()
+        # for cookie in self._cookies:
+        #     self._headers.set(name='Set-Cookie', value=cookie.value(), adjust_case_to_allow_duplicates=True)
+
+        # result['headers'] = self._headers.to_dict()
 
         return result
 
