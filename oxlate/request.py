@@ -15,6 +15,9 @@ class Request:
     def get_headers(self):
         return Headers(self._data['headers'])
 
+    # def to_dict(self):
+    #     return deepcopy(self._data)
+
     # def get_cookie(self, name, default=None):
     #     return self._cookies.get(name, default);
 

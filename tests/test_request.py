@@ -67,6 +67,18 @@ def test_get_headers_maps_Headers_instance_to_underlying_data():
     assert new_headers.get(name='some_key')    == [{'key': 'some_key',    'value': 'some_value'}]
     assert new_headers.get(name='another_key') == [{'key': 'another_key', 'value': 'another_value'}]
 
+def test_to_dict_returns_copy_of_underlying_data():
+    orig_data = {
+        'uri': '/orig-uri',
+    }
+    request = new_request(orig_data)
+
+    new_data = request.to_dict()
+    assert new_data == orig_data
+
+    request.set_uri('/new-uri')
+    assert orig_data['uri'] == '/new-uri'
+    assert new_data['uri']  == '/orig-uri'
 
 # def test_get_cookie_when_header_present(mocker):
 #     request = new_request({
