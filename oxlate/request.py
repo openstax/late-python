@@ -4,7 +4,7 @@ from copy import deepcopy
 
 class Request:
     def __init__(self, data):
-        self._data = deepcopy(data)
+        self._data = data
 
     def get_uri(self):
         return self._data.get('uri')
@@ -15,8 +15,8 @@ class Request:
     def get_headers(self):
         return Headers(self._data['headers'])
 
-    # def to_dict(self):
-    #     return deepcopy(self._data)
+    def to_dict(self):
+        return deepcopy(self._data)
 
     # def get_cookie(self, name, default=None):
     #     return self._cookies.get(name, default);

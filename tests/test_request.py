@@ -71,7 +71,7 @@ def test_to_dict_returns_copy_of_underlying_data():
     orig_data = {
         'uri': '/orig-uri',
     }
-    request = new_request(orig_data)
+    request = Request(orig_data)
 
     new_data = request.to_dict()
     assert new_data == orig_data
