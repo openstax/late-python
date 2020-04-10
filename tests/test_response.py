@@ -1,11 +1,12 @@
+from oxlate import Response, ResponseCookie
+
 import json
 import pytest
+
+from .pytest_regex import pytest_regex
 import ipdb
 
-from oxlate import Response
-from .pytest_regex import pytest_regex
-
-def test_basic(mocker):
+def test_basic():
     response = Response(body="Hi")
     assert response.to_dict() == {
         'status': 200,
@@ -20,44 +21,15 @@ def test_basic(mocker):
         }
     }
 
-def test_cookies(mocker):
-    response = Response()
-    response.add_cookie(name="foo", value="bar")
-    assert response.to_dict() == {
-        'status': 200,
-        'headers': {
-            'set-cookie': [
-                {
-                    'key': 'set-cookie',
-                    'value': 'foo=bar'
-                }
-            ]
-        }
-    }
-
-def test_delete_cookie(mocker):
-    response = Response()
-    response.delete_cookie(name="foo")
-    assert response.to_dict() == {
-        'status': 200,
-        'headers': {
-            'set-cookie': [
-                {
-                    'key': 'set-cookie',
-                    'value': pytest_regex('foo=; Expires=.*')
-                }
-            ]
-        }
-    }
-
 def test_more(mocker):
     response = Response(status=201) \
                    .set_status(204) \
                    .set_content_type_json() \
-                   .set_body("howdy") \
-                   .add_cookie(name="foo", value="bar") \
-                   .add_cookie(name="yoyo", value="ma") \
-                   .set_header(name="HI", value="THERE")
+                   .set_body("howdy")
+    response.get_headers() \
+            .set_response_cookie(ResponseCookie(name="foo", value="bar")) \
+            .set_response_cookie(ResponseCookie(name="yoyo", value="ma")) \
+            .set(name="HI", value="THERE")
 
     assert response.to_dict() == {
         'status': 204,
