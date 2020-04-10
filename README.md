@@ -32,6 +32,9 @@ def lambda_handler(event, context):
     request.get_uri()
     request.set_uri('/some/new/uri')
 
+    ## get the viewer's country code
+    request.get_viewer_country()
+
     ## return Headers overlay
     headers = request.get_headers()
 

@@ -15,5 +15,8 @@ class Request:
     def get_headers(self):
         return Headers(self._data['headers'])
 
+    def get_viewer_country(self):
+        return self.get_headers().get_value('cloudfront-viewer-country', default=None)
+
     def to_dict(self):
         return deepcopy(self._data)
