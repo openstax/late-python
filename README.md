@@ -4,22 +4,111 @@
 
 A Python package with OpenStax Lambda@Edge ("lAMBDA at eDGE") utilities.
 
+## Overview
+
+`late-python` provides object overlays
+to the JSON containers
+inside Lambda@Edge events and responses.
+These overlay objects handle the details
+of accessing and modifying
+the containers they overlay.
+
+All `get_*` methods
+leave the underlying container intact,
+and all `set_*` methods
+modify it in place.
+
 ## Usage
 
+### Dealing With Request Events
+
 ```python
-from oxlate import Event, Request, Response
+from oxlate import Event, Response
 
 def lambda_handler(event, context):
-    request = Event(event).request()
+    request = Event(event).request() ## returns Request overlay
 
+    ## get and set the request uri field
     request.get_uri()
-    request.set_uri("something") # used when changing the request mid-flight
-    request.get_cookie("auth")
-    request.viewer_country()  # requires 'cloudfront-viewer-country' header forwarding
+    request.set_uri('/some/new/uri')
 
+    ## return Headers overlay
+    headers = request.get_headers()
 
-    response = Response(status=302) \
-                   .set_header(name='Location', value='https://openstax.org')
+    ## get the Request event header array-of-hash (or None if missing):
+    ##    [{name=..., value=...}]
+    headers.get(name='header-name')
+
+    ## get the header value only
+    ## (or None if missing and no default given)
+    headers.get_value(name='header-name', default='some default')
+
+    ## set or overwrite a header
+    headers.set(
+        name  = 'header-name',
+        value = 'some value',
+    )
+
+    ## get a request cookie value
+    ## (or None if missing and no default given)
+    headers.get_request_cookie('cookie_name', default='some default')
+
+    ## set or overwrite a request cookie value
+    headers.set_request_cookie('cookie_name', value='some value')
+
+    ## return a deep copy of the overlaid hashmap
+    return request.to_dict()
+```
+
+### Dealing With Response Objects
+```python
+from oxlate import Response
+
+def request_handler(event, context):
+    ## construct a Response object
+    response = Response(
+        status=302,
+        content_type='text/plain',
+        body=None,
+    )
+
+    ## use method chaining to tweak Response
+    response.set_status(404) \
+            .set_content_type('custom/type') \
+            .set_content_type_json() \
+            .set_content_type_html() \
+            .set_body(json.dumps('some body text'))
+
+    ## get a Headers overlay
+    headers = response.get_headers()
+
+    ## get the header value only
+    ## (or None if missing and no default given)
+    headers.get_value(name='header-name', default='some default')
+
+    ## set or overwrite a header
+    headers.set(
+        name  = 'header-name',
+        value = 'some value',
+    )
+
+    ## get a ResponseCookie overlay
+    cookie = headers.get_response_cookie('cookie-name')
+    print(cookie.name())
+    print(cookie.value())
+    print(cookie.expires_at())
+    print(cookie.path())
+    print(cookie.domain())
+
+    ## set or override a ResponseCookie
+    cookie = ResponseCookie(
+        name       = 'cookie-name',
+        value      = 'some value',
+        expires_at = datetime.datetime.utcnow() + datetime.timedelta(days=2),
+        path       = '/',
+        domain     = 'my.domain.com',
+    )
+    headers.set_response_cookie(cookie)
 
     return response.to_dict()
 ```
