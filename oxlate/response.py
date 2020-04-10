@@ -33,17 +33,6 @@ class Response:
     def get_headers(self):
         return self._headers
 
-    # def add_cookie(self, name, value=None, expires_at=None, path=None, domain=None):
-    #     self._cookies.append(Cookie(name=name, value=value, expires_at=expires_at, path=path, domain=domain))
-    #     return self
-
-    # def delete_cookie(self, name, path=None, domain=None):
-    #     self._cookies.append(Cookie(name=name, value="", expires_days_from_now=-1000, path=path, domain=domain))
-
-    # def set_header(self, name, value):
-    #     self._headers.set(name=name, value=value)
-    #     return self
-
     def to_dict(self):
         result = {
             'status': self._status
@@ -55,11 +44,6 @@ class Response:
 
         if self._headers is not None:
             result['headers'] = self._headers.to_dict()
-
-        # for cookie in self._cookies:
-        #     self._headers.set(name='Set-Cookie', value=cookie.value(), adjust_case_to_allow_duplicates=True)
-
-        # result['headers'] = self._headers.to_dict()
 
         return result
 

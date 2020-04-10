@@ -80,27 +80,6 @@ def test_to_dict_returns_copy_of_underlying_data():
     assert orig_data['uri'] == '/new-uri'
     assert new_data['uri']  == '/orig-uri'
 
-# def test_get_cookie_when_header_present(mocker):
-#     request = new_request({
-#         "headers": {
-#             "cookie": [
-#                 {
-#                     "key": "cookie",
-#                     "value": "somename=blah; other=foo"
-#                 }
-#             ],
-#         }
-#     })
-
-#     assert request.get_cookie(name="somename") == "blah"
-#     assert request.get_cookie(name="other") == "foo"
-#     assert request.get_cookie(name="howdy") == None
-
-# def test_get_cookie_when_header_absent(mocker):
-#     request = new_request({"headers": {}})
-
-#     assert request.get_cookie(name="howdy") == None
-
 # def test_to_dict(mocker):
 #     request = Request({"blah": "foo"})
 #     assert request.to_dict() == {"blah": "foo"}
