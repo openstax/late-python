@@ -20,6 +20,8 @@ modify it in place.
 
 ## Usage
 
+`pip install oxlate`
+
 ### Dealing With Request Events
 
 ```python
@@ -120,8 +122,8 @@ def request_handler(event, context):
 
 All development is done inside a docker container.  From your host running Docker, in this directory run:
 
-```
-$> docker-compose up -d
+```bash
+$> ./docker/build
 %> ./docker/bash
 ```
 
@@ -149,5 +151,14 @@ Note that `pytest` is also on the `PATH` so you can call it directly.
 
 ## Distributing
 
-...
+From within the container, build the distributions:
 
+```
+$> python setup.py sdist bdist_wheel
+```
+
+To upload:
+
+```
+$> python -m twine upload dist/*
+```
