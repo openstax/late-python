@@ -15,5 +15,3 @@ RUN python setup.py develop
 
 # Install the unit test and distribution libraries
 RUN pip install pytest pytest-mock ipdb setuptools wheel twine keyring --user
-
-ENTRYPOINT ["/code/docker/entrypoint"]
