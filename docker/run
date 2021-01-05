@@ -1,3 +1,8 @@
 #!/usr/bin/env bash
 
-docker run -it openstax/late-python:latest "$@"
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+docker run -it \
+           -v $DIR/..:/code \
+           openstax/late-python:latest \
+           "$@"

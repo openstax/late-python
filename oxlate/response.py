@@ -6,12 +6,17 @@ from .headers import Headers
 class Response:
     def __init__(self, status=200, content_type='text/plain', body=None):
         self.set_status(status)
+        self.set_status_description(None)
         self.set_content_type(content_type)
         self.set_body(body)
         self._headers = Headers()
 
     def set_status(self, value):
         self._status = value
+        return self
+
+    def set_status_description(self, description):
+        self._status_description = description
         return self
 
     def set_content_type(self, content_type):
@@ -33,10 +38,31 @@ class Response:
     def get_headers(self):
         return self._headers
 
+    def set_header(self, name, value, adjust_case_to_allow_duplicates=False):
+        self._headers.set(name, value, adjust_case_to_allow_duplicates)
+        return self
+
+    def set_noindex(self):
+        self.set_header('X-Robots-Tag', 'noindex')
+        return self
+
+    def set_cors(self, origin=None, methods=None):
+        if origin: self.set_header('Access-Control-Allow-Origin', origin)
+        if methods: self.set_header('Access-Control-Allow-Methods', methods)
+        return self
+
+    @classmethod
+    def redirect_to(self, location):
+        return self(status=302, content_type="text/html") \
+                   .set_status_description('Found') \
+                   .set_header('Location', location)
+
     def to_dict(self):
         result = {
             'status': self._status
         }
+
+        if self._status_description: result['statusDescription'] = self._status_description
 
         if self._body is not None:
             result['body'] = self.__encoded_body()

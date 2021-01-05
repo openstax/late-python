@@ -61,3 +61,51 @@ def test_more(mocker):
             ]
         }
     }
+
+def test_redirect_to(mocker):
+    response = Response.redirect_to("http://www.example.com")
+
+    assert response.to_dict() == {
+        'status': 302,
+        'statusDescription': 'Found',
+        'headers': {
+            'Location': [{
+                'key': 'Location',
+                'value': "http://www.example.com"
+            }]
+        }
+    }
+
+def test_set_header(mocker):
+    response = Response().set_header('Foo', 'Bar')
+
+    assert response.to_dict()['headers'] == {
+        'Foo': [{
+            'key': 'Foo',
+            'value': 'Bar'
+        }]
+    }
+
+def test_set_noindex(mocker):
+    response = Response().set_noindex()
+
+    assert response.to_dict()['headers'] == {
+        'X-Robots-Tag': [{
+            'key': 'X-Robots-Tag',
+            'value': 'noindex'
+        }]
+    }
+
+def test_set_cors(mocker):
+    response = Response().set_cors(origin='*', methods='GET, HEAD')
+
+    assert response.to_dict()['headers'] == {
+        'Access-Control-Allow-Origin': [{
+            'key': 'Access-Control-Allow-Origin',
+            'value': '*'
+        }],
+        'Access-Control-Allow-Methods': [{
+            'key': 'Access-Control-Allow-Methods',
+            'value': 'GET, HEAD'
+        }]
+    }
